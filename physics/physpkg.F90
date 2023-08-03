@@ -21,6 +21,8 @@ module physpkg
   use constituents,     only: pcnst, cnst_name, cnst_get_ind
   use camsrfexch,       only: cam_out_t, cam_in_t
 
+  use phys_control,     only: use_hemco ! Use Harmonized Emissions Component (HEMCO)
+
   use cam_control_mod,  only: ideal_phys, adiabatic
   use phys_control,     only: phys_do_flux_avg, phys_getopts, waccmx_is
   use scamMod,          only: single_column, scm_crm_mode
@@ -149,6 +151,7 @@ contains
     use subcol_utils,       only: is_subcol_on, subcol_get_scheme
     use dyn_comp,           only: dyn_register
     use offline_driver,     only: offline_driver_reg
+    use hemco_interface,    only: HCOI_Chunk_Init
 
     !---------------------------Local variables-----------------------------
     !
@@ -327,6 +330,11 @@ contains
     ! ***NOTE*** No registering constituents after the call to cnst_chk_dim.
 
     call offline_driver_reg()
+
+    if (use_hemco) then
+        ! initialize harmonized emissions component (HEMCO)
+        call HCOI_Chunk_Init()
+    endif
 
     ! This needs to be last as it requires all pbuf fields to be added
     if (cam_snapshot_before_num > 0 .or. cam_snapshot_after_num > 0) then
@@ -1170,6 +1178,7 @@ contains
 #if ( defined OFFLINE_DYN )
     use metdata,         only: get_met_srf2
 #endif
+    use hemco_interface, only: HCOI_Chunk_Run
     !
     ! Input arguments
     !
@@ -1202,6 +1211,14 @@ contains
     ! if using IOP values for surface fluxes overwrite here after surface components run
     !-----------------------------------------------------------------------
     if (single_column) call scam_use_iop_srf(cam_in)
+
+    if(use_hemco) then
+        !----------------------------------------------------------
+        ! run hemco (phase 2 before chemistry)
+        ! only phase 2 is used currently for HEMCO-CESM
+        !----------------------------------------------------------
+        call HCOI_Chunk_Run(cam_in, phys_state, pbuf2d, phase=2)
+    endif
 
     !-----------------------------------------------------------------------
     ! Tendency physics after coupler
@@ -1265,13 +1282,14 @@ contains
   !
 
   subroutine phys_final( phys_state, phys_tend, pbuf2d )
-    use physics_buffer, only: physics_buffer_desc, pbuf_deallocate
-    use chemistry,      only: chem_final
-    use carma_intr,     only: carma_final
-    use wv_saturation,  only: wv_sat_final
-    use microp_aero,    only: microp_aero_final
-    use phys_grid_ctem, only : phys_grid_ctem_final
-    use nudging, only: Nudge_Model, nudging_final
+    use physics_buffer,  only: physics_buffer_desc, pbuf_deallocate
+    use chemistry,       only: chem_final
+    use carma_intr,      only: carma_final
+    use wv_saturation,   only: wv_sat_final
+    use microp_aero,     only: microp_aero_final
+    use phys_grid_ctem,  only : phys_grid_ctem_final
+    use nudging,         only: Nudge_Model, nudging_final
+    use hemco_interface, only: HCOI_Chunk_Final
     !-----------------------------------------------------------------------
     !
     ! Purpose:
@@ -1295,6 +1313,12 @@ contains
     call microp_aero_final()
     call phys_grid_ctem_final()
     if(Nudge_Model) call nudging_final()
+
+    if(use_hemco) then
+        ! cleanup hemco
+        call HCOI_Chunk_Final
+    endif
+
   end subroutine phys_final
 
 
@@ -1491,7 +1515,7 @@ contains
     real(r8), pointer, dimension(:,:) :: dvcore
     real(r8), pointer, dimension(:,:) :: ast     ! relative humidity cloud fraction
 
-!+tht variables for dme_energy_adjust 
+!+tht variables for dme_energy_adjust
     real(r8)           :: eflx(pcols), dsema(pcols)
     logical, parameter :: ohf_adjust =.true.  ! condensates have surface specific enthalpy
 !-tht
@@ -1583,7 +1607,7 @@ contains
        call cam_snapshot_all_outfld_tphysac(cam_snapshot_before_num, state, tend, cam_in, cam_out, pbuf,&
                     fh2o, surfric, obklen, flx_heat, cmfmc, dlf, det_s, det_ice, net_flx)
     end if
-    call chem_emissions( state, cam_in )
+    call chem_emissions( state, cam_in, pbuf )
     if (trim(cam_take_snapshot_after) == "chem_emissions") then
        call cam_snapshot_all_outfld_tphysac(cam_snapshot_after_num, state, tend, cam_in, cam_out, pbuf,&
                     fh2o, surfric, obklen, flx_heat, cmfmc, dlf, det_s, det_ice, net_flx)
@@ -2341,9 +2365,9 @@ contains
     ! This call must be after the last parameterization and call to physics_update
     !
     call pbuf_set_field(pbuf, teout_idx, state%te_cur(:,dyn_te_idx), (/1,itim_old/),(/pcols,1/))
-    ! 
+    !
     ! different dry-mass/energy conservation adjustments/checks depending on dycore vert.coord.
-    ! 
+    !
     moist_mixing_ratio_dycore = dycore_is('LR').or. dycore_is('FV3')
     ! for dry mixing ratio dycore, physics_dme_adjust is called for energy diagnostic purposes only.
     ! So, save off tracers
@@ -2373,7 +2397,7 @@ contains
         state%pdel(:ncol,:pver)     = tmp_pdel(:ncol,:pver)
         state%ps(:ncol)             = tmp_ps(:ncol)
       endif
-    else 
+    else
     !
     ! FV: convert dry-type mixing ratios to moist here because physics_dme_adjust
     !     assumes moist. This is done in p_d_coupling for other dynamics. Bundy, Feb 2004.
@@ -2407,7 +2431,7 @@ contains
     if (vc_dycore == vc_height.or.vc_dycore == vc_dry_pressure) then
       !
       ! MPAS and SE specific scaling of temperature for enforcing energy consistency
-      ! (and to make sure that temperature dependent diagnostic tendencies 
+      ! (and to make sure that temperature dependent diagnostic tendencies
       !  are computed correctly; e.g. dtcore)
       !
       scaling(1:ncol,:)  = cpairv(:ncol,:,lchnk)/cp_or_cv_dycore(:ncol,:,lchnk)
@@ -2451,7 +2475,7 @@ contains
    !call diag_phys_tend_writeout (state, pbuf,  tend, ztodt, tmp_q, tmp_t, &
    !                              tmp_cldliq, tmp_cldice, qini, cldliqini, cldiceini, eflx, dsema) !+tht cam-oslo
     call diag_phys_tend_writeout (state, pbuf,  tend, ztodt, tmp_t, &
-                                  qini, cldliqini, cldiceini, eflx, dsema) !+tht without cam-oslo 
+                                  qini, cldliqini, cldiceini, eflx, dsema) !+tht without cam-oslo
 !-ebudget update
 
     call clybry_fam_set( ncol, lchnk, map2chm, state%q, pbuf )

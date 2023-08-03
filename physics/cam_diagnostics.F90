@@ -263,10 +263,10 @@ contains
     call register_vector_field('UAP','VAP')
 
     call addfld (apcnst(1), (/ 'lev' /), 'A','kg/kg',         trim(cnst_longname(1))//' (after physics)')
-!+ebudget update 
+!+ebudget update
   ! if ( dycore_is('LR') .or. dycore_is('SE')  .or. dycore_is('FV3') ) then
     if (.not.dycore_is('EUL')) then
-!-ebudget update 
+!-ebudget update
       call addfld ('TFIX',    horiz_only,  'A', 'K/s',        'T fixer (T equivalent of Energy correction)')
 !+tht
       call addfld ('EBREAK'    ,  horiz_only, 'A','W/m2',  &
@@ -310,8 +310,8 @@ contains
 
     call addfld ('UU',         (/ 'lev' /), 'A', 'm2/s2',     'Zonal velocity squared' )
     call addfld ('WSPEED',     (/ 'lev' /), 'X', 'm/s',       'Horizontal total wind speed maximum' )
-    call addfld ('WSPDSRFMX',  horiz_only,  'X', 'm/s',       'Horizontal total wind speed maximum at the surface' )
-    call addfld ('WSPDSRFAV',  horiz_only,  'A', 'm/s',       'Horizontal total wind speed average at the surface' )
+    call addfld ('WSPDSRFMX',  horiz_only,  'X', 'm/s',       'Horizontal total wind speed maximum at surface layer midpoint' )
+    call addfld ('WSPDSRFAV',  horiz_only,  'A', 'm/s',       'Horizontal total wind speed average at surface layer midpoint' )
 
     call addfld ('OMEGA',      (/ 'lev' /), 'A', 'Pa/s',      'Vertical velocity (pressure)')
     call addfld ('OMEGAT',     (/ 'lev' /), 'A', 'K Pa/s  ',  'Vertical heat flux' )
@@ -420,10 +420,10 @@ contains
       call add_default ('UAP     '  , history_budget_histfile_num, ' ')
       call add_default ('VAP     '  , history_budget_histfile_num, ' ')
       call add_default (apcnst(1)   , history_budget_histfile_num, ' ')
-!+ebudget update 
+!+ebudget update
   !   if ( dycore_is('LR') .or. dycore_is('SE') .or. dycore_is('FV3')  ) then
       if (.not.dycore_is('EUL')) then
-!-ebudget update 
+!-ebudget update
         call add_default ('TFIX    '    , history_budget_histfile_num, ' ')
       end if
     end if
@@ -467,7 +467,7 @@ contains
     call addfld( 'CPAIRV', (/ 'lev' /), 'I', 'J/K/kg', 'Variable specific heat cap air' )
     call addfld( 'RAIRV', (/ 'lev' /), 'I', 'J/K/kg', 'Variable dry air gas constant' )
 
-!+ebudget update 
+!+ebudget update
     if (thermo_budget_history) then
        !
        ! energy diagnostics addflds for vars_stage combinations plus cam_budget_em_snapshots
@@ -487,7 +487,7 @@ contains
        call cam_budget_em_register('dEdt_phys_tot_physE'  ,'phAM','phBF','phy','dif',longname='dE/dt physics total using physics E formula (phAM-phBF)')
        call cam_budget_em_register('dEdt_phys_tot_dynE'   ,'dyAM','dyBF','phy','dif',longname='dE/dt physics total using dycore E (dyAM-dyBF)')
     endif
-!-ebudget update 
+!-ebudget update
 
   end subroutine diag_init_dry
 
@@ -501,10 +501,10 @@ contains
 
     type(physics_buffer_desc), pointer, intent(in) :: pbuf2d(:,:)
 
-!+ebudget update 
+!+ebudget update
   ! integer :: k, m
     integer ::    m
-!+ebudget update 
+!+ebudget update
     integer :: ixcldice, ixcldliq ! constituent indices for cloud liquid and ice water.
     integer :: ierr
     ! column burdens for all constituents except water vapor
@@ -2183,7 +2183,7 @@ contains
 !-ebudget update
 !+tht
  !    call check_energy_get_integrals( heat_glob_out=heat_glob )
-      call check_energy_get_integrals( heat_glob_out=heat_glob , tedif_glob_out=tedif_glob ) 
+      call check_energy_get_integrals( heat_glob_out=heat_glob , tedif_glob_out=tedif_glob )
 !-tht
       ftem2(:ncol)  = heat_glob/cpair
       call outfld('TFIX', ftem2, pcols, lchnk   )
@@ -2340,8 +2340,8 @@ contains
 !+tht
  !     tmp_q, tmp_cldliq, tmp_cldice, qini, cldliqini, cldiceini)
 !+ebudget update
-  !    tmp_q, tmp_t, tmp_cldliq, tmp_cldice, qini, cldliqini, cldiceini, eflx, dsema) 
-              tmp_t,                         qini, cldliqini, cldiceini, eflx, dsema) 
+  !    tmp_q, tmp_t, tmp_cldliq, tmp_cldice, qini, cldliqini, cldiceini, eflx, dsema)
+              tmp_t,                         qini, cldliqini, cldiceini, eflx, dsema)
 !-ebudget update
 !-tht
     !---------------------------------------------------------------
@@ -2374,7 +2374,7 @@ contains
 
 !+tht
  !  call diag_phys_tend_writeout_dry(state, pbuf, tend, ztodt)
-    call diag_phys_tend_writeout_dry(state, pbuf, tend, ztodt, tmp_t, eflx, dsema) 
+    call diag_phys_tend_writeout_dry(state, pbuf, tend, ztodt, tmp_t, eflx, dsema)
 !-tht
     if (moist_physics) then
       call diag_phys_tend_writeout_moist(state, pbuf,  tend, ztodt,           &
