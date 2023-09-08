@@ -1,0 +1,80 @@
+name: Bug Report
+description: File a CAM-Nor bug report (remember to search existing issues and the GitHub discussions first)
+title: "Put brief (<65 char) bug title here!"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also - what did you expect to happen?
+      placeholder: Write a description here.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: What are the steps to reproduce the bug?
+      description: How can we see this issue?
+      placeholder: ex. Run the case in /cluster/work/users/...
+    validations:
+      required: true
+  - type: input
+    id: cam-tag
+    attributes:
+      label: What CAM-Nor tag were you using?
+      description: Type "git describe" to see the tag
+      placeholder: ex. noresm_v4_cam6_3_112
+    validations:
+      required: true
+  - type: dropdown
+    id: machine
+    attributes:
+      label: What machine were you running CAM (or NorESM) on?
+      multiple: true
+      options:
+        - Betzy
+        - Docker container
+        - Personal Computer
+        - Other (please explain below)
+    validations:
+      required: true
+  - type: dropdown
+    id: compiler
+    attributes:
+      label: What compiler were you using?
+      multiple: true
+      options:
+        - Intel
+        - GNU
+        - Other (please specify below)
+    validations:
+      required: true
+  - type: input
+    id: case-directory
+    attributes:
+      label: Path to a case directory, if applicable
+      description: The full path to a case in which the error occurred
+      placeholder: ex. /cluster/projects/nn0000k/...
+    validations:
+      required: false
+  - type: dropdown
+    id: implemenation
+    attributes:
+      label: Will you be addressing this bug yourself?
+      description: If Yes, please also assign this issue to yourself (if possible)
+      multiple: false
+      options:
+        - "Yes"
+        - "Yes, but I will need some help"
+        - "No"
+    validations:
+      required: true
+  - type: textarea
+    id: extra-info
+    attributes:
+      label: Extra info
+      description: Please provide any additional information here that you think might be relevant
+      placeholder: Write a description here.
+    validations:
+      required: false
