@@ -30,7 +30,9 @@ module physpkg
   use perf_mod
   use cam_logfile,     only: iulog
   use camsrfexch,      only: cam_export, cam_export_uv !+tht for compatibility with non-dev
-
+#ifdef AEROCOM
+  use oslo_aero_aerocom, only: intfrh  
+#endif
   use modal_aero_calcsize,    only: modal_aero_calcsize_init, modal_aero_calcsize_diag, modal_aero_calcsize_reg
   use modal_aero_wateruptake, only: modal_aero_wateruptake_init, modal_aero_wateruptake_dr, modal_aero_wateruptake_reg
 
@@ -118,7 +120,11 @@ contains
     use mo_lightning,       only: lightning_register
     use cloud_fraction,     only: cldfrc_register
     use microp_driver,      only: microp_driver_register
+#ifdef OSLO_AERO
+    use oslo_aero_microp,   only: oslo_aero_microp_register
+#else
     use microp_aero,        only: microp_aero_register
+#endif
     use macrop_driver,      only: macrop_driver_register
     use clubb_intr,         only: clubb_register_cam
     use conv_water,         only: conv_water_register
@@ -218,7 +224,11 @@ contains
 
        ! cloud water
        if (.not. do_clubb_sgs) call macrop_driver_register()
+#ifdef OSLO_AERO
+       call oslo_aero_microp_register()
+#else
        call microp_aero_register()
+#endif
        call microp_driver_register()
 
        ! Register CLUBB_SGS here
@@ -251,6 +261,7 @@ contains
        call conv_water_register()
 
        ! Determine whether its a 'modal' aerosol simulation  or not
+       ! and register calcsize and water uptake pbuf flds if appropriate
        call rad_cnst_get_info(0, nmodes=nmodes)
        clim_modal_aero = (nmodes > 0)
 
@@ -736,7 +747,11 @@ contains
     use cloud_diagnostics,  only: cloud_diagnostics_init
     use wv_saturation,      only: wv_sat_init
     use microp_driver,      only: microp_driver_init
+#ifdef OSLO_AERO
+    use oslo_aero_microp,   only: oslo_aero_microp_init
+#else
     use microp_aero,        only: microp_aero_init
+#endif
     use macrop_driver,      only: macrop_driver_init
     use conv_water,         only: conv_water_init
     use tracers,            only: tracers_init
@@ -898,7 +913,11 @@ contains
     call convect_deep_init(pref_edge)
 
     if (.not. do_clubb_sgs) call macrop_driver_init(pbuf2d)
+#ifdef OSLO_AERO
+    call oslo_aero_microp_init()
+#else
     call microp_aero_init(phys_state,pbuf2d)
+#endif
     call microp_driver_init(pbuf2d)
     call conv_water_init
 
@@ -929,7 +948,11 @@ contains
     dlfzm_idx = pbuf_get_index('DLFZM', ierr)
     cmfmczm_idx = pbuf_get_index('CMFMC_DP', ierr)
 
+#ifdef OSLO_AERO
+    prog_modal_aero = .true.
+#else    
     call phys_getopts(prog_modal_aero_out=prog_modal_aero)
+#endif
 
     ! Initialize Nudging Parameters
     !--------------------------------
@@ -1113,11 +1136,9 @@ contains
     call gmean_mass ('before tphysbc DRY', phys_state)
 #endif
 
-
     !-----------------------------------------------------------------------
     ! Tendency physics before flux coupler invocation
     !-----------------------------------------------------------------------
-    !
 
 #if (defined BFB_CAM_SCAM_IOP )
     do c=begchunk, endchunk
@@ -1357,7 +1378,11 @@ contains
     use waccmx_phys_intr,   only: waccmx_phys_ion_elec_temp_tend ! WACCM-X
     use aoa_tracers,        only: aoa_tracers_timestep_tend
     use physconst,          only: rhoh2o
+#ifdef OSLO_AERO
+    use oslo_aero_model,    only: aero_model_drydep
+#else
     use aero_model,         only: aero_model_drydep
+#endif
    !use check_energy,       only: check_energy_chng, calc_te_and_aam_budgets
     use check_energy,       only: check_energy_chng, tot_energy_phys
     use check_energy,       only: check_tracers_data, check_tracers_init, check_tracers_chng
@@ -1381,7 +1406,11 @@ contains
     use lunar_tides,        only: lunar_tides_tend
     use ssatcontrail,       only: ssatcontrail_d0
     use microp_driver,      only: microp_driver_tend
+#ifdef OSLO_AERO
+    use oslo_aero_microp,   only: oslo_aero_microp_run
+#else
     use microp_aero,        only: microp_aero_run
+#endif
     use clubb_intr,         only: clubb_tend_cam, clubb_emissions_cam
     use subcol,             only: subcol_gen, subcol_ptend_avg
     use subcol_utils,       only: subcol_ptend_copy, is_subcol_on
@@ -1394,7 +1423,11 @@ contains
     use radiation,          only: radiation_tend
     use tropopause,         only: tropopause_output
     use cam_diagnostics,    only: diag_phys_writeout, diag_conv, diag_clip_tend_writeout
+#ifdef OSLO_AERO
+    use oslo_aero_model,    only: aero_model_wetdep
+#else
     use aero_model,         only: aero_model_wetdep
+#endif
     use physics_buffer,     only: col_type_subcol
     use check_energy,       only: check_energy_timestep_init
     use carma_intr,         only: carma_wetdep_tend, carma_timestep_tend, carma_emission_tend
@@ -1405,6 +1438,10 @@ contains
     use cam_budget,         only: thermo_budget_history
     use dyn_tests_utils,    only: vc_dycore, vc_height, vc_dry_pressure
     use air_composition,    only: cpairv, cp_or_cv_dycore
+#ifdef OSLO_AERO
+    use oslo_aero_params
+    use oslo_aero_share
+#endif
     !
     ! Arguments
     !
@@ -1499,6 +1536,7 @@ contains
     real(r8) :: tmp_t     (pcols,pver) ! tmp space +tht
     real(r8) :: scaling(pcols,pver)
     logical  :: moist_mixing_ratio_dycore
+    integer  :: kcomp                  ! mode number (1-14) OSLO_AERO
 
     ! physics buffer fields for total energy and mass adjustment
     integer itim_old, ifld
@@ -1783,9 +1821,15 @@ contains
                   fh2o, surfric, obklen, flx_heat, cmfmc, dlf, det_s, det_ice, net_flx)
           end if
 
+#ifdef OSLO_AERO
+          call t_startf('oslo_aero_microp_run')
+          call oslo_aero_microp_run(state, ptend_aero, cld_macmic_ztodt, pbuf)
+          call t_stopf('oslo_aero_microp_run')
+#else
           call t_startf('microp_aero_run')
           call microp_aero_run(state, ptend_aero, cld_macmic_ztodt, pbuf)
           call t_stopf('microp_aero_run')
+#endif
 
           call t_startf('microp_tend')
 
@@ -1937,6 +1981,7 @@ contains
        end if
 
        call aero_model_wetdep( state, ztodt, dlf, cam_out, ptend, pbuf)
+
        if ( (trim(cam_take_snapshot_after) == "aero_model_wetdep") .and.      &
             (trim(cam_take_snapshot_before) == trim(cam_take_snapshot_after))) then
           call cam_snapshot_ptend_outfld(ptend, lchnk)
@@ -1947,6 +1992,54 @@ contains
           call cam_snapshot_all_outfld_tphysac(cam_snapshot_after_num, state, tend, cam_in, cam_out, pbuf, &
                   fh2o, surfric, obklen, flx_heat, cmfmc, dlf, det_s, det_ice, net_flx)
        end if
+
+#ifdef AEROCOM
+       !  Estimating hygroscopic growth by use of linear interpolation w.r.t. mass 
+       !  fractions of each internally mixed component for each mode (kcomp).
+       !
+       call intfrh(lchnk, ncol, v3so4, v3insol, v3oc, v3ss, relhum, frh)
+       !
+       do k=1,pver
+          do i=1,ncol
+             rnewdry1(i,k)   = rnew3d(i,k,1)
+             rnewdry2(i,k)   = rnew3d(i,k,2)
+             rnewdry4(i,k)   = rnew3d(i,k,4)
+             rnewdry5(i,k)   = rnew3d(i,k,5)
+             rnewdry6(i,k)   = rnew3d(i,k,6)
+             rnewdry7(i,k)   = rnew3d(i,k,7)
+             rnewdry8(i,k)   = rnew3d(i,k,8)
+             rnewdry9(i,k)   = rnew3d(i,k,9)
+             rnewdry10(i,k)  = rnew3d(i,k,10)
+             rnewdry11(i,k)  = rnew3d(i,k,11)
+             rnewdry13(i,k)  = rnew3d(i,k,13)
+             rnewdry14(i,k)  = rnew3d(i,k,14)
+             rnew1(i,k)   = rnew3d(i,k,1)*frh(i,k,1)
+             rnew2(i,k)   = rnew3d(i,k,2)*frh(i,k,2)
+             rnew4(i,k)   = rnew3d(i,k,4)*frh(i,k,4)
+             rnew5(i,k)   = rnew3d(i,k,5)*frh(i,k,5)
+             rnew6(i,k)   = rnew3d(i,k,6)*frh(i,k,6)
+             rnew7(i,k)   = rnew3d(i,k,7)*frh(i,k,7)
+             rnew8(i,k)   = rnew3d(i,k,8)*frh(i,k,8)
+             rnew9(i,k)   = rnew3d(i,k,9)*frh(i,k,9)
+             rnew10(i,k)  = rnew3d(i,k,10)*frh(i,k,10)
+             rnew11(i,k)  = rnew3d(i,k,11)*frh(i,k,11)
+             rnew13(i,k)  = rnew3d(i,k,13)*frh(i,k,13)
+             rnew14(i,k)  = rnew3d(i,k,14)*frh(i,k,14)
+             logsig1(i,k) = logsig3d(i,k,1)
+             logsig2(i,k) = logsig3d(i,k,2)
+             logsig4(i,k) = logsig3d(i,k,4)
+             logsig5(i,k) = logsig3d(i,k,5)
+             logsig6(i,k) = logsig3d(i,k,6)
+             logsig7(i,k) = logsig3d(i,k,7)
+             logsig8(i,k) = logsig3d(i,k,8)
+             logsig9(i,k) = logsig3d(i,k,9)
+             logsig10(i,k)= logsig3d(i,k,10)
+             logsig11(i,k)= logsig3d(i,k,11)
+             logsig13(i,k)= logsig3d(i,k,13)
+             logsig14(i,k)= logsig3d(i,k,14)
+          end do
+       end do
+#endif ! AEROCOM
 
        if (carma_do_wetdep) then
           ! CARMA wet deposition
@@ -2180,6 +2273,7 @@ contains
     end if
 
     call aero_model_drydep( state, pbuf, obklen, surfric, cam_in, ztodt, cam_out, ptend )
+
     if ( (trim(cam_take_snapshot_after) == "aero_model_drydep") .and.         &
          (trim(cam_take_snapshot_before) == trim(cam_take_snapshot_after))) then
        call cam_snapshot_ptend_outfld(ptend, lchnk)
@@ -2889,12 +2983,13 @@ contains
         snow_str_sc = 0._r8
       end if
 
-      !===================================================
-      ! Run wet deposition routines to intialize aerosols
-      !===================================================
-
+#ifndef OSLO_AERO
+      ! Calculate aerosol size distribution parameters 
       call modal_aero_calcsize_diag(state, pbuf)
+
+      ! CAM specific driver for modal aerosol water uptake code.
       call modal_aero_wateruptake_dr(state, pbuf)
+#endif
 
       !===================================================
       ! Radiation computations
@@ -2956,6 +3051,10 @@ subroutine phys_timestep_init(phys_state, cam_in, cam_out, pbuf2d)
   use nudging,             only: Nudge_Model, nudging_timestep_init
   use waccmx_phys_intr,    only: waccmx_phys_ion_elec_temp_timestep_init
   use phys_grid_ctem,      only: phys_grid_ctem_diags
+#ifdef OSLO_AERO
+  use oslo_aero_ocean,     only: oslo_aero_ocean_time
+#endif
+
   implicit none
 
   type(physics_state), intent(inout), dimension(begchunk:endchunk) :: phys_state
@@ -2993,6 +3092,9 @@ subroutine phys_timestep_init(phys_state, cam_in, cam_out, pbuf2d)
   call aircraft_emit_adv(phys_state, pbuf2d)
   call prescribed_volcaero_adv(phys_state, pbuf2d)
   call prescribed_strataero_adv(phys_state, pbuf2d)
+#ifdef OSLO_AERO
+  call oslo_aero_ocean_time(phys_state, pbuf2d)
+#endif
 
   ! prescribed aerosol deposition fluxes
   call aerodep_flx_adv(phys_state, pbuf2d, cam_out)
