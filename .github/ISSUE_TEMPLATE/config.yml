@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: NorESM documentation
+    url: https://noresm-docs.readthedocs.io/en/noresm2
+    about: The NorESM documentation is the best place to start
+  - name: CAM GitHub Discussions forum
+    url: https://github.com/NorESMhub/CAM/discussions
+    about: GitHub discussion topics related to CAM-Nor
