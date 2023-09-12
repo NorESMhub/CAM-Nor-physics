@@ -1307,7 +1307,9 @@ contains
     use chemistry,       only: chem_final
     use carma_intr,      only: carma_final
     use wv_saturation,   only: wv_sat_final
+#ifndef OSLO_AERO
     use microp_aero,     only: microp_aero_final
+#endif
     use phys_grid_ctem,  only : phys_grid_ctem_final
     use nudging,         only: Nudge_Model, nudging_final
     use hemco_interface, only: HCOI_Chunk_Final
@@ -1331,7 +1333,9 @@ contains
     call chem_final
     call carma_final
     call wv_sat_final
+#ifndef OSLO_AERO
     call microp_aero_final()
+#endif
     call phys_grid_ctem_final()
     if(Nudge_Model) call nudging_final()
 
