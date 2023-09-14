@@ -30,9 +30,6 @@ module physpkg
   use perf_mod
   use cam_logfile,     only: iulog
   use camsrfexch,      only: cam_export, cam_export_uv !+tht for compatibility with non-dev
-#ifdef AEROCOM
-  use oslo_aero_aerocom, only: intfrh  
-#endif
   use modal_aero_calcsize,    only: modal_aero_calcsize_init, modal_aero_calcsize_diag, modal_aero_calcsize_reg
   use modal_aero_wateruptake, only: modal_aero_wateruptake_init, modal_aero_wateruptake_dr, modal_aero_wateruptake_reg
 
@@ -262,14 +259,16 @@ contains
 
        ! Determine whether its a 'modal' aerosol simulation  or not
        ! and register calcsize and water uptake pbuf flds if appropriate
+#ifndef OSLO_AERO
+       clim_modal_aero = .false.
+#else
        call rad_cnst_get_info(0, nmodes=nmodes)
        clim_modal_aero = (nmodes > 0)
-
        if (clim_modal_aero) then
           call modal_aero_calcsize_reg()
           call modal_aero_wateruptake_reg()
        endif
-
+#endif
        ! register chemical constituents including aerosols ...
        call chem_register()
 
@@ -1524,9 +1523,6 @@ contains
     real(r8) :: snow_sed_carma(pcols)          ! snow from cloud ice sedimentation (CARMA)
 
     logical :: labort                            ! abort flag
-
-    real(r8) tvm(pcols,pver)           ! virtual temperature
-    real(r8) prect(pcols)              ! total precipitation
     real(r8) surfric(pcols)            ! surface friction velocity
     real(r8) obklen(pcols)             ! Obukhov length
     real(r8) :: fh2o(pcols)            ! h2o flux to balance source from methane chemistry
@@ -1561,7 +1557,6 @@ contains
     real(r8)           :: eflx(pcols), dsema(pcols)
     logical, parameter :: ohf_adjust =.true.  ! condensates have surface specific enthalpy
 !-tht
-
     !-----------------------------------------------------------------------
     lchnk = state%lchnk
     ncol  = state%ncol
@@ -1996,54 +1991,6 @@ contains
           call cam_snapshot_all_outfld_tphysac(cam_snapshot_after_num, state, tend, cam_in, cam_out, pbuf, &
                   fh2o, surfric, obklen, flx_heat, cmfmc, dlf, det_s, det_ice, net_flx)
        end if
-
-#ifdef AEROCOM
-       !  Estimating hygroscopic growth by use of linear interpolation w.r.t. mass 
-       !  fractions of each internally mixed component for each mode (kcomp).
-       !
-       call intfrh(lchnk, ncol, v3so4, v3insol, v3oc, v3ss, relhum, frh)
-       !
-       do k=1,pver
-          do i=1,ncol
-             rnewdry1(i,k)   = rnew3d(i,k,1)
-             rnewdry2(i,k)   = rnew3d(i,k,2)
-             rnewdry4(i,k)   = rnew3d(i,k,4)
-             rnewdry5(i,k)   = rnew3d(i,k,5)
-             rnewdry6(i,k)   = rnew3d(i,k,6)
-             rnewdry7(i,k)   = rnew3d(i,k,7)
-             rnewdry8(i,k)   = rnew3d(i,k,8)
-             rnewdry9(i,k)   = rnew3d(i,k,9)
-             rnewdry10(i,k)  = rnew3d(i,k,10)
-             rnewdry11(i,k)  = rnew3d(i,k,11)
-             rnewdry13(i,k)  = rnew3d(i,k,13)
-             rnewdry14(i,k)  = rnew3d(i,k,14)
-             rnew1(i,k)   = rnew3d(i,k,1)*frh(i,k,1)
-             rnew2(i,k)   = rnew3d(i,k,2)*frh(i,k,2)
-             rnew4(i,k)   = rnew3d(i,k,4)*frh(i,k,4)
-             rnew5(i,k)   = rnew3d(i,k,5)*frh(i,k,5)
-             rnew6(i,k)   = rnew3d(i,k,6)*frh(i,k,6)
-             rnew7(i,k)   = rnew3d(i,k,7)*frh(i,k,7)
-             rnew8(i,k)   = rnew3d(i,k,8)*frh(i,k,8)
-             rnew9(i,k)   = rnew3d(i,k,9)*frh(i,k,9)
-             rnew10(i,k)  = rnew3d(i,k,10)*frh(i,k,10)
-             rnew11(i,k)  = rnew3d(i,k,11)*frh(i,k,11)
-             rnew13(i,k)  = rnew3d(i,k,13)*frh(i,k,13)
-             rnew14(i,k)  = rnew3d(i,k,14)*frh(i,k,14)
-             logsig1(i,k) = logsig3d(i,k,1)
-             logsig2(i,k) = logsig3d(i,k,2)
-             logsig4(i,k) = logsig3d(i,k,4)
-             logsig5(i,k) = logsig3d(i,k,5)
-             logsig6(i,k) = logsig3d(i,k,6)
-             logsig7(i,k) = logsig3d(i,k,7)
-             logsig8(i,k) = logsig3d(i,k,8)
-             logsig9(i,k) = logsig3d(i,k,9)
-             logsig10(i,k)= logsig3d(i,k,10)
-             logsig11(i,k)= logsig3d(i,k,11)
-             logsig13(i,k)= logsig3d(i,k,13)
-             logsig14(i,k)= logsig3d(i,k,14)
-          end do
-       end do
-#endif ! AEROCOM
 
        if (carma_do_wetdep) then
           ! CARMA wet deposition
