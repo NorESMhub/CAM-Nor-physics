@@ -259,16 +259,19 @@ contains
 
        ! Determine whether its a 'modal' aerosol simulation  or not
        ! and register calcsize and water uptake pbuf flds if appropriate
-#ifndef OSLO_AERO
+#ifdef OSLO_AERO
        clim_modal_aero = .false.
 #else
        call rad_cnst_get_info(0, nmodes=nmodes)
+       write(6,*)'DEBUG: nmodes is ',nmodes
        clim_modal_aero = (nmodes > 0)
+       write(6,*)'DEBUG: calling modal_aero_calcsize'
        if (clim_modal_aero) then
           call modal_aero_calcsize_reg()
           call modal_aero_wateruptake_reg()
        endif
 #endif
+
        ! register chemical constituents including aerosols ...
        call chem_register()
 
@@ -1309,7 +1312,7 @@ contains
 #ifndef OSLO_AERO
     use microp_aero,     only: microp_aero_final
 #endif
-    use phys_grid_ctem,  only : phys_grid_ctem_final
+    use phys_grid_ctem,  only: phys_grid_ctem_final
     use nudging,         only: Nudge_Model, nudging_final
     use hemco_interface, only: HCOI_Chunk_Final
     !-----------------------------------------------------------------------
