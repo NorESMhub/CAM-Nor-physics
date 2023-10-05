@@ -263,9 +263,7 @@ contains
        clim_modal_aero = .false.
 #else
        call rad_cnst_get_info(0, nmodes=nmodes)
-       write(6,*)'DEBUG: nmodes is ',nmodes
        clim_modal_aero = (nmodes > 0)
-       write(6,*)'DEBUG: calling modal_aero_calcsize'
        if (clim_modal_aero) then
           call modal_aero_calcsize_reg()
           call modal_aero_wateruptake_reg()
