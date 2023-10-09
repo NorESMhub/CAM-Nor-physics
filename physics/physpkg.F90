@@ -1382,11 +1382,7 @@ contains
     use waccmx_phys_intr,   only: waccmx_phys_ion_elec_temp_tend ! WACCM-X
     use aoa_tracers,        only: aoa_tracers_timestep_tend
     use physconst,          only: rhoh2o
-#ifdef OSLO_AERO
-    use oslo_aero_model,    only: aero_model_drydep
-#else
     use aero_model,         only: aero_model_drydep
-#endif
    !use check_energy,       only: check_energy_chng, calc_te_and_aam_budgets
     use check_energy,       only: check_energy_chng, tot_energy_phys
     use check_energy,       only: check_tracers_data, check_tracers_init, check_tracers_chng
@@ -1427,11 +1423,7 @@ contains
     use radiation,          only: radiation_tend
     use tropopause,         only: tropopause_output
     use cam_diagnostics,    only: diag_phys_writeout, diag_conv, diag_clip_tend_writeout
-#ifdef OSLO_AERO
-    use oslo_aero_model,    only: aero_model_wetdep
-#else
     use aero_model,         only: aero_model_wetdep
-#endif
     use physics_buffer,     only: col_type_subcol
     use check_energy,       only: check_energy_timestep_init
     use carma_intr,         only: carma_wetdep_tend, carma_timestep_tend, carma_emission_tend
