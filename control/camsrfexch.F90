@@ -16,8 +16,6 @@ module camsrfexch
                              active_Fall_flxdst1, active_Fall_flxvoc, active_Fall_flxfire, &
                              active_Faxa_nhx, active_Faxa_noy
 
-
-
   implicit none
   private
 
@@ -27,7 +25,7 @@ module camsrfexch
   public atm2hub_deallocate
   public hub2atm_deallocate
   public cam_export
-  public cam_export_uv !+tht
+  public cam_export_uv
 
   ! Public data types
   public cam_out_t                  ! Data from atmosphere
@@ -45,10 +43,8 @@ module camsrfexch
      real(r8) :: topo(pcols)         ! surface topographic height (m)
      real(r8) :: ubot(pcols)         ! bot level u wind
      real(r8) :: vbot(pcols)         ! bot level v wind
-!+tht
      real(r8) :: uold(pcols)         ! prev. tstp bot level u wind
      real(r8) :: vold(pcols)         ! prev. tstp bot level v wind
-!-tht
      real(r8) :: qbot(pcols,pcnst)   ! bot level specific humidity
      real(r8) :: pbot(pcols)         ! bot level pressure
      real(r8) :: rho(pcols)          ! bot level density
@@ -497,8 +493,6 @@ subroutine cam_export(state,cam_out,pbuf)
       cam_out%thbot(i) = state%t(i,pver) * state%exner(i,pver)
       cam_out%zbot(i)  = state%zm(i,pver)
       cam_out%topo(i)  = state%phis(i) / gravit
-    ! cam_out%ubot(i)  = state%u(i,pver) !tht c'd out
-    ! cam_out%vbot(i)  = state%v(i,pver) !tht c'd out
       cam_out%pbot(i)  = state%pmid(i,pver)
       cam_out%psl(i)   = psl(i)
       cam_out%rho(i)   = cam_out%pbot(i)/(rair*cam_out%tbot(i))
@@ -577,7 +571,6 @@ subroutine cam_export(state,cam_out,pbuf)
 
 end subroutine cam_export
 
-!+tht
  subroutine cam_export_uv(state,cam_out,pbuf)
 
    ! Transfer atmospheric fields into necessary surface data structures
@@ -599,7 +592,6 @@ end subroutine cam_export
    type(physics_buffer_desc), pointer  :: pbuf(:)
 
    ! Local variables
-
    integer :: i              ! Longitude index
    integer :: m              ! constituent index
    integer :: lchnk          ! Chunk index
@@ -607,9 +599,7 @@ end subroutine cam_export
    integer :: psl_idx
    integer :: prec_dp_idx, snow_dp_idx, prec_sh_idx, snow_sh_idx
    integer :: prec_sed_idx,snow_sed_idx,prec_pcw_idx,snow_pcw_idx
-
    real(r8), pointer :: psl(:)
-
    logical, save :: first_call=.true.
    integer, save :: ncall
    !-----------------------------------------------------------------------
@@ -621,24 +611,24 @@ end subroutine cam_export
    call pbuf_get_field(pbuf, psl_idx, psl)
 
    if (first_call) then
-ncall=1
-!print*,'CAMSRFEXCH first call'
-    do i=1,ncol
-      cam_out%uold(i)  = state%u(i,pver)
-      cam_out%vold(i)  = state%v(i,pver)
-      cam_out%ubot(i)  = state%u(i,pver)
-      cam_out%vbot(i)  = state%v(i,pver)
-    end do
-    first_call=.false.
+      ncall=1
+      !print*,'CAMSRFEXCH first call'
+      do i=1,ncol
+         cam_out%uold(i)  = state%u(i,pver)
+         cam_out%vold(i)  = state%v(i,pver)
+         cam_out%ubot(i)  = state%u(i,pver)
+         cam_out%vbot(i)  = state%v(i,pver)
+      end do
+      first_call=.false.
    else
-ncall=ncall+1
-!print*,'CAMSRFEXCH call number ',ncall
-    do i=1,ncol
-      cam_out%uold(i)  = cam_out%ubot(i)
-      cam_out%vold(i)  = cam_out%vbot(i)
-      cam_out%ubot(i)  = state%u(i,pver)
-      cam_out%vbot(i)  = state%v(i,pver)
-    end do
+      ncall=ncall+1
+      !print*,'CAMSRFEXCH call number ',ncall
+      do i=1,ncol
+         cam_out%uold(i)  = cam_out%ubot(i)
+         cam_out%vold(i)  = cam_out%vbot(i)
+         cam_out%ubot(i)  = state%u(i,pver)
+         cam_out%vbot(i)  = state%v(i,pver)
+      end do
    endif
 
 end subroutine cam_export_uv

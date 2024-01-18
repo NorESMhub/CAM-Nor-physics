@@ -29,7 +29,7 @@ module physpkg
   use flux_avg,         only: flux_avg_init
   use perf_mod
   use cam_logfile,     only: iulog
-  use camsrfexch,      only: cam_export, cam_export_uv !+tht for compatibility with non-dev
+  use camsrfexch,      only: cam_export, cam_export_uv ! for compatibility with non-dev
   use modal_aero_calcsize,    only: modal_aero_calcsize_init, modal_aero_calcsize_diag, modal_aero_calcsize_reg
   use modal_aero_wateruptake, only: modal_aero_wateruptake_init, modal_aero_wateruptake_dr, modal_aero_wateruptake_reg
 
@@ -950,7 +950,7 @@ contains
 
 #ifdef OSLO_AERO
     prog_modal_aero = .true.
-#else    
+#else
     call phys_getopts(prog_modal_aero_out=prog_modal_aero)
 #endif
 
@@ -1526,7 +1526,7 @@ contains
     real(r8) :: tmp_trac  (pcols,pver,pcnst) ! tmp space
     real(r8) :: tmp_pdel  (pcols,pver) ! tmp space
     real(r8) :: tmp_ps    (pcols)      ! tmp space
-    real(r8) :: tmp_t     (pcols,pver) ! tmp space +tht
+    real(r8) :: tmp_t     (pcols,pver) ! tmp space
     real(r8) :: scaling(pcols,pver)
     logical  :: moist_mixing_ratio_dycore
     integer  :: kcomp                  ! mode number (1-14) OSLO_AERO
@@ -1546,10 +1546,9 @@ contains
     real(r8), pointer, dimension(:,:) :: dvcore
     real(r8), pointer, dimension(:,:) :: ast     ! relative humidity cloud fraction
 
-!+tht variables for dme_energy_adjust
+    ! variables for dme_energy_adjust
     real(r8)           :: eflx(pcols), dsema(pcols)
     logical, parameter :: ohf_adjust =.true.  ! condensates have surface specific enthalpy
-!-tht
     !-----------------------------------------------------------------------
     lchnk = state%lchnk
     ncol  = state%ncol
@@ -2928,7 +2927,7 @@ contains
       end if
 
 #ifndef OSLO_AERO
-      ! Calculate aerosol size distribution parameters 
+      ! Calculate aerosol size distribution parameters
       call modal_aero_calcsize_diag(state, pbuf)
 
       ! CAM specific driver for modal aerosol water uptake code.
