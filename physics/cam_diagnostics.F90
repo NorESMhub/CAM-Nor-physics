@@ -205,7 +205,7 @@ contains
     use tidal_diag,         only: tidal_diag_init
     use cam_budget,         only: cam_budget_em_snapshot, cam_budget_em_register, thermo_budget_history ! ebudget update
 #ifdef OSLO_AERO
-    use oslo_aero_params,   only: nbmodes
+    use oslo_aero_share,    only: nbmodes
 #endif
 
     type(physics_buffer_desc), pointer, intent(in) :: pbuf2d(:,:)

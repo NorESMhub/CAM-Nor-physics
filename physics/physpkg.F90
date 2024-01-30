@@ -1435,7 +1435,6 @@ contains
     use dyn_tests_utils,    only: vc_dycore, vc_height, vc_dry_pressure
     use air_composition,    only: cpairv, cp_or_cv_dycore
 #ifdef OSLO_AERO
-    use oslo_aero_params
     use oslo_aero_share
 #endif
     !
@@ -2995,7 +2994,7 @@ subroutine phys_timestep_init(phys_state, cam_in, cam_out, pbuf2d)
   use waccmx_phys_intr,    only: waccmx_phys_ion_elec_temp_timestep_init
   use phys_grid_ctem,      only: phys_grid_ctem_diags
 #ifdef OSLO_AERO
-  use oslo_aero_ocean,     only: oslo_aero_ocean_time
+  use oslo_aero_ocean,     only: oslo_aero_ocean_adv
 #endif
 
   implicit none
@@ -3036,7 +3035,7 @@ subroutine phys_timestep_init(phys_state, cam_in, cam_out, pbuf2d)
   call prescribed_volcaero_adv(phys_state, pbuf2d)
   call prescribed_strataero_adv(phys_state, pbuf2d)
 #ifdef OSLO_AERO
-  call oslo_aero_ocean_time(phys_state, pbuf2d)
+  call oslo_aero_ocean_adv(phys_state, pbuf2d)
 #endif
 
   ! prescribed aerosol deposition fluxes
