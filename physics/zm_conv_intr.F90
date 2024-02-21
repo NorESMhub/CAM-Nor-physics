@@ -11,7 +11,7 @@ module zm_conv_intr
    use physconst,    only: cpair
    use ppgrid,       only: pver, pcols, pverp, begchunk, endchunk
    use zm_conv,      only: zm_conv_evap, zm_convr, convtran, momtran
-   
+
    use zm_microphysics,  only: zm_aero_t, zm_conv_t
    use rad_constituents, only: rad_cnst_get_info, rad_cnst_get_mode_num, rad_cnst_get_aer_mmr, &
                                rad_cnst_get_aer_props, rad_cnst_get_mode_props !, &
@@ -233,7 +233,7 @@ subroutine zm_conv_readnl(nlfile)
    call mpi_bcast(zmconv_capelmt,           1, mpi_real8, masterprocid, mpicom, ierr)
    if (ierr /= 0) call endrun("zm_conv_readnl: FATAL: mpi_bcast: zmconv_capelmt")
    call mpi_bcast(zmconv_parcel_pbl,        1, mpi_logical, masterprocid, mpicom, ierr)
-   if (ierr /= 0) call endrun("zm_conv_readnl: FATAL: mpi_bcast: zmconv_parcel_pbl") 
+   if (ierr /= 0) call endrun("zm_conv_readnl: FATAL: mpi_bcast: zmconv_parcel_pbl")
    call mpi_bcast(zmconv_tau,               1, mpi_real8, masterprocid, mpicom, ierr)
    if (ierr /= 0) call endrun("zm_conv_readnl: FATAL: mpi_bcast: zmconv_tau")
 
@@ -326,10 +326,8 @@ subroutine zm_conv_init(pref_edge)
 
     call addfld ('DIFZM'   ,(/ 'lev' /), 'A','kg/kg/s ','Detrained ice water from ZM convection')
     call addfld ('DLFZM'   ,(/ 'lev' /), 'A','kg/kg/s ','Detrained liquid water from ZM convection')
-!+tht
     call addfld ('EURT',      horiz_only,  'A', '1/m', 'ZM plume ensemble entrainment rate') ! 2D
    !call addfld ('EURT',     (/ 'lev' /),  'A', '1/m', 'ZM plume ensemble entrainment rate') ! 3D
-!-tht
 
     call phys_getopts( history_budget_out = history_budget, &
                        history_budget_histfile_num_out = history_budget_histfile_num)
@@ -490,10 +488,8 @@ subroutine zm_conv_tend(pblh    ,mcon    ,cme     , &
 
    real(r8) :: pcont(pcols), pconb(pcols), freqzm(pcols)
 
-!+tht
-  !real(r8) :: eurt(pcols)      !+tht: entr.rate 2D
-   real(r8) :: eurt(pcols,pver) !+tht: entr.rate 3D
-!-tht
+  !real(r8) :: eurt(pcols)      ! entr.rate 2D
+   real(r8) :: eurt(pcols,pver) ! entr.rate 3D
 
    ! history output fields
    real(r8) :: cape(pcols)        ! w  convective available potential energy.
@@ -667,24 +663,22 @@ subroutine zm_conv_tend(pblh    ,mcon    ,cme     , &
                     state%t       ,state%q(:,:,1),      prec    ,jctop   ,jcbot   , &
                     pblh    ,state%zm      ,state%phis    ,state%zi      ,ptend_loc%q(:,:,1)    , &
                     ptend_loc%s    , state%pmid     ,state%pint    ,state%pdel     , &
-!                   .5_r8*ztodt    ,mcon    ,cme     , cape,      &
-                    .5_r8*ztodt    ,mcon    ,cme     , cape, eurt,&        !+tht eurt
+                    .5_r8*ztodt    ,mcon    ,cme     , cape, eurt,&
                     tpert   ,dlf     ,pflx    ,zdu     ,rprd    , &
                     mu,      md,      du,      eu,      ed,       &
-!                   dp,      dsubcld, jt,      maxg,    ideep,    &
-                    dp,      dsubcld, jt,      maxg,    ideep, lengath,  & !+tht 
+                    dp,      dsubcld, jt,      maxg,    ideep, lengath,  &
                     ql,  rliq, landfrac,                          &
                     org, orgt, zm_org2d,  &
                     dif, dnlf, dnif,  conv, &
                     aero(lchnk), rice)
 
-!  lengath = count(ideep > 0) !+tht (c'd out)
+   !  lengath = count(ideep > 0) ! (c'd out)
 
    call outfld('CAPE', cape, pcols, lchnk)        ! RBN - CAPE output
 
-  !call outfld('EURT', eurt, pcols, lchnk)        !+tht: entr.rate 2D
-   call outfld('EURT', eurt(:,pver), pcols, lchnk)!+tht: entr.rate 3D -> 2D diag 
-  !call outfld('EURT', eurt(1,1), pcols, lchnk)   !+tht: entr.rate 3D 
+  !call outfld('EURT', eurt, pcols, lchnk)        ! entr.rate 2D
+   call outfld('EURT', eurt(:,pver), pcols, lchnk)! entr.rate 3D -> 2D diag
+  !call outfld('EURT', eurt(1,1), pcols, lchnk)   ! entr.rate 3D
 !
 ! Output fractional occurance of ZM convection
 !
@@ -716,7 +710,7 @@ subroutine zm_conv_tend(pblh    ,mcon    ,cme     , &
 
    ftem(:ncol,:pver) = ptend_loc%s(:ncol,:pver)/cpair
    call outfld('ZMDT    ',ftem           ,pcols   ,lchnk   )
-   call outfld('ZMDQ    ',ptend_loc%q(1,1,1) ,pcols   ,lchnk   )
+   call outfld('ZMDQ    ',ptend_loc%q(:,:,1) ,pcols   ,lchnk   )
    call t_stopf ('zm_convr')
 
    call outfld('DIFZM'   ,dif            ,pcols, lchnk)
@@ -791,7 +785,7 @@ subroutine zm_conv_tend(pblh    ,mcon    ,cme     , &
    call outfld('FZSNTZM ',ftem           ,pcols   ,lchnk   )
    ftem(:ncol,:pver) = tend_s_snwevmlt(:ncol,:pver)/cpair
    call outfld('EVSNTZM ',ftem           ,pcols   ,lchnk   )
-   call outfld('EVAPQZM ',ptend_loc%q(1,1,1) ,pcols   ,lchnk   )
+   call outfld('EVAPQZM ',ptend_loc%q(:,:,1) ,pcols   ,lchnk   )
    call outfld('ZMFLXPRC', flxprec, pcols, lchnk)
    call outfld('ZMFLXSNW', flxsnow, pcols, lchnk)
    call outfld('ZMNTPRPD', ntprprd, pcols, lchnk)
@@ -847,20 +841,20 @@ subroutine zm_conv_tend(pblh    ,mcon    ,cme     , &
         call outfld('ZM_ORG2D', zm_org2d, pcols, lchnk)
      endif
      call outfld('ZMMTT', ftem             , pcols, lchnk)
-     call outfld('ZMMTU', wind_tends(1,1,1), pcols, lchnk)
-     call outfld('ZMMTV', wind_tends(1,1,2), pcols, lchnk)
+     call outfld('ZMMTU', wind_tends(:,:,1), pcols, lchnk)
+     call outfld('ZMMTV', wind_tends(:,:,2), pcols, lchnk)
 
      ! Output apparent force from  pressure gradient
-     call outfld('ZMUPGU', pguall(1,1,1), pcols, lchnk)
-     call outfld('ZMUPGD', pgdall(1,1,1), pcols, lchnk)
-     call outfld('ZMVPGU', pguall(1,1,2), pcols, lchnk)
-     call outfld('ZMVPGD', pgdall(1,1,2), pcols, lchnk)
+     call outfld('ZMUPGU', pguall(:,:,1), pcols, lchnk)
+     call outfld('ZMUPGD', pgdall(:,:,1), pcols, lchnk)
+     call outfld('ZMVPGU', pguall(:,:,2), pcols, lchnk)
+     call outfld('ZMVPGD', pgdall(:,:,2), pcols, lchnk)
 
      ! Output in-cloud winds
-     call outfld('ZMICUU', icwu(1,1,1), pcols, lchnk)
-     call outfld('ZMICUD', icwd(1,1,1), pcols, lchnk)
-     call outfld('ZMICVU', icwu(1,1,2), pcols, lchnk)
-     call outfld('ZMICVD', icwd(1,1,2), pcols, lchnk)
+     call outfld('ZMICUU', icwu(:,:,1), pcols, lchnk)
+     call outfld('ZMICUD', icwd(:,:,1), pcols, lchnk)
+     call outfld('ZMICVU', icwu(:,:,2), pcols, lchnk)
+     call outfld('ZMICVD', icwd(:,:,2), pcols, lchnk)
 
    end if
 
@@ -885,8 +879,8 @@ subroutine zm_conv_tend(pblh    ,mcon    ,cme     , &
                   nstep,   fracis,  ptend_loc%q, fake_dpdry, ztodt)
    call t_stopf ('convtran1')
 
-   call outfld('ZMDICE ',ptend_loc%q(1,1,ixcldice) ,pcols   ,lchnk   )
-   call outfld('ZMDLIQ ',ptend_loc%q(1,1,ixcldliq) ,pcols   ,lchnk   )
+   call outfld('ZMDICE ',ptend_loc%q(:,:,ixcldice) ,pcols   ,lchnk   )
+   call outfld('ZMDLIQ ',ptend_loc%q(:,:,ixcldliq) ,pcols   ,lchnk   )
 
    ! add tendency from this process to tend from other processes here
    call physics_ptend_sum(ptend_loc,ptend_all, ncol)

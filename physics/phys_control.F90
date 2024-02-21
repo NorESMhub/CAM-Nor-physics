@@ -104,7 +104,7 @@ logical, public, protected :: fv_am_correction = .false.
 ! Option for Harmonized Emissions Component (HEMCO)
 logical, public, protected :: use_hemco = .false.
 
-!tht: energy adjustment in dry mass adjustment
+! energy adjustment in dry mass adjustment
 logical, public, protected :: dme_energy_adjust = .false.
 
 ! CAM snapshot before/after file numbers and control
@@ -139,7 +139,7 @@ subroutine phys_ctl_readnl(nlfile)
       history_cesm_forcing, history_scwaccm_forcing, history_chemspecies_srf, &
       do_clubb_sgs, state_debug_checks, use_hetfrz_classnuc, use_gw_oro, use_gw_front, &
       use_gw_front_igw, use_gw_convect_dp, use_gw_convect_sh, cld_macmic_num_steps, &
-      dme_energy_adjust, & !+tht
+      dme_energy_adjust, &
       offline_driver, convproc_do_aer, cam_snapshot_before_num, cam_snapshot_after_num, &
       cam_take_snapshot_before, cam_take_snapshot_after, cam_physics_mesh, use_hemco
    !-----------------------------------------------------------------------------
@@ -197,7 +197,7 @@ subroutine phys_ctl_readnl(nlfile)
    call mpi_bcast(use_gw_convect_dp,           1,                     mpi_logical,   masterprocid, mpicom, ierr)
    call mpi_bcast(use_gw_convect_sh,           1,                     mpi_logical,   masterprocid, mpicom, ierr)
    call mpi_bcast(cld_macmic_num_steps,        1,                     mpi_integer,   masterprocid, mpicom, ierr)
-   call mpi_bcast(dme_energy_adjust,           1,                     mpi_logical,   masterprocid, mpicom, ierr) !+tht
+   call mpi_bcast(dme_energy_adjust,           1,                     mpi_logical,   masterprocid, mpicom, ierr)
    call mpi_bcast(offline_driver,              1,                     mpi_logical,   masterprocid, mpicom, ierr)
    call mpi_bcast(convproc_do_aer,             1,                     mpi_logical,   masterprocid, mpicom, ierr)
    call mpi_bcast(cam_snapshot_before_num,     1,                     mpi_integer,   masterprocid, mpicom, ierr)
@@ -320,7 +320,7 @@ subroutine phys_getopts(deep_scheme_out, shallow_scheme_out, eddy_scheme_out, mi
                         history_cesm_forcing_out, history_scwaccm_forcing_out, history_chemspecies_srf_out, &
                         cam_chempkg_out, prog_modal_aero_out, macrop_scheme_out, &
                         do_clubb_sgs_out, use_spcam_out, state_debug_checks_out, cld_macmic_num_steps_out, &
-                        dme_energy_adjust_out, & !+tht
+                        dme_energy_adjust_out, &
                         offline_driver_out, convproc_do_aer_out, cam_snapshot_before_num_out, cam_snapshot_after_num_out,&
                         cam_take_snapshot_before_out, cam_take_snapshot_after_out, physics_grid_out)
 !-----------------------------------------------------------------------
@@ -363,7 +363,7 @@ subroutine phys_getopts(deep_scheme_out, shallow_scheme_out, eddy_scheme_out, mi
    logical,           intent(out), optional :: prog_modal_aero_out
    logical,           intent(out), optional :: state_debug_checks_out
    integer,           intent(out), optional :: cld_macmic_num_steps_out
-   logical,           intent(out), optional :: dme_energy_adjust_out !+tht
+   logical,           intent(out), optional :: dme_energy_adjust_out
    logical,           intent(out), optional :: offline_driver_out
    logical,           intent(out), optional :: convproc_do_aer_out
    integer,           intent(out), optional :: cam_snapshot_before_num_out
@@ -403,7 +403,7 @@ subroutine phys_getopts(deep_scheme_out, shallow_scheme_out, eddy_scheme_out, mi
    if ( present(prog_modal_aero_out     ) ) prog_modal_aero_out      = prog_modal_aero
    if ( present(state_debug_checks_out  ) ) state_debug_checks_out   = state_debug_checks
    if ( present(cld_macmic_num_steps_out) ) cld_macmic_num_steps_out = cld_macmic_num_steps
-   if ( present(dme_energy_adjust_out   ) ) dme_energy_adjust_out    = dme_energy_adjust !+tht
+   if ( present(dme_energy_adjust_out   ) ) dme_energy_adjust_out    = dme_energy_adjust
    if ( present(offline_driver_out      ) ) offline_driver_out       = offline_driver
    if ( present(convproc_do_aer_out     ) ) convproc_do_aer_out      = convproc_do_aer
    if ( present(cam_snapshot_before_num_out ) ) cam_snapshot_before_num_out = cam_snapshot_before_num
