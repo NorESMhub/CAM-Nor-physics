@@ -29,7 +29,7 @@ module physpkg
   use flux_avg,               only: flux_avg_init
   use perf_mod
   use cam_logfile,            only: iulog
-  use camsrfexch,             only: cam_export, cam_export_uv ! for compatibility with non-dev
+  use camsrfexch,             only: cam_export
   use modal_aero_calcsize,    only: modal_aero_calcsize_init, modal_aero_calcsize_diag, modal_aero_calcsize_reg
   use modal_aero_wateruptake, only: modal_aero_wateruptake_init, modal_aero_wateruptake_dr, modal_aero_wateruptake_reg
   use oslo_aero_share,        only: use_oslo_aero
@@ -2652,6 +2652,7 @@ contains
     real(r8) :: zero_tracers(pcols,pcnst)
 
     logical   :: lq(pcnst)
+    logical   :: first_call = .true.
 
     !-----------------------------------------------------------------------
 
@@ -2933,7 +2934,6 @@ contains
     ! Save atmospheric fields to force surface models
     call t_startf('cam_export')
     call cam_export (state,cam_out,pbuf)
-    call cam_export_uv (state,cam_out,pbuf) ! N.B.: kept for compatibility with non-dev CAM
     call t_stopf('cam_export')
 
     ! Write export state to history file
