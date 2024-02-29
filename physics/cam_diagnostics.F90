@@ -376,7 +376,7 @@ contains
     call addfld ('ATMEINT',    horiz_only,  'A', 'J/m2','Vertically integrated total atmospheric energy ')
 
     if (use_oslo_aero) then
-       call addfld ('AOD_VIS ',horiz_only,  'A','unitless' ,'Aerosol optical depth at 0.442-0.625um') ! CAM4-Oslo: 0.35-0.64um
+       call addfld ('AODVIS  ',horiz_only,  'A','unitless' ,'Aerosol optical depth at 0.442-0.625um') ! CAM4-Oslo: 0.35-0.64um
        call addfld ('ABSVIS  ',horiz_only,  'A','unitless' ,'Aerosol absorptive optical depth at 0.442-0.625um') ! CAM4-Oslo: 0.35-0.64um
        call addfld ('AODVVOLC ',horiz_only, 'A','unitless' ,'CMIP6 volcanic aerosol optical depth at 0.442-0.625um') ! CAM4-Oslo: 0.35-0.64um
        call addfld ('ABSVVOLC ',horiz_only, 'A','unitless' ,'CMIP6 volcanic aerosol absorptive optical depth at 0.442-0.625um') ! CAM4-Oslo: 0.35-0.64um
@@ -554,7 +554,7 @@ contains
           enddo
        end if ! end if (do_aerocom)
 
-       call add_default ('AOD_VIS ', 1, ' ')
+       call add_default ('AODVIS  ', 1, ' ')
        call add_default ('ABSVIS  ', 1, ' ')
        call add_default ('AODVVOLC', 1, ' ')
        call add_default ('ABSVVOLC', 1, ' ')
