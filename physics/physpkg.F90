@@ -2652,8 +2652,6 @@ contains
     real(r8) :: zero_tracers(pcols,pcnst)
 
     logical   :: lq(pcnst)
-    logical   :: first_call = .true.
-
     !-----------------------------------------------------------------------
 
     call t_startf('bc_init')
